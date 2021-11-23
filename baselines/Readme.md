@@ -1,6 +1,5 @@
 ## Baselines
 
----
 ### AlignedReID 
 
 [[paper](https://arxiv.org/abs/1711.08184)][[paper](https://www.sciencedirect.com/science/article/pii/S0031320319302031?casa_token=i87oHbS1tg0AAAAA:91ksksd2huP72e0nzDKFLtnJU3hAYHx4mm-dpBxwdjEYJdHjf8xFIXwSXrVIaW2Wn_Ociqy8xA)]
