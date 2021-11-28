@@ -50,5 +50,6 @@ class AlignedReIDModel(nn.Module):
         # if not self.training:
         #     return f,lf
         # y = self.classifier(f)
+        f = f.view([1] + list(f.size()))
         return f
         

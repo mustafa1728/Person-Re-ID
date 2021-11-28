@@ -9,6 +9,7 @@ import numpy as np
 
 from PIL import Image
 from tqdm import tqdm
+import timm
 
 import torch
 import torch.nn as nn
@@ -44,15 +45,15 @@ H, W, D = 1, 1, 2048 # for dummymodel we have feature volume 7x7x2048
 
 # TODO: Comment out the dummy model
 ######## LA_Transfoermer
+# H, W, D = 1, 14, 768
 # vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
-# model = LATransformerTest(vit_base, lmbd=8).to("gpu")
-
-# # Load LA-Transformer
-# save_path = os.path.join('./model', name, 'net_best.pth')
-# model.load_state_dict(torch.load(save_path), strict=False)
+# model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+# save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
 
 ######## Aligned ReID
+H, W, D = 1, 1, 2048
 model = AlignedReIDModel()
 save_path = os.path.join('baselines/AlignedReID/la_tr_checkpoint_ep120.pth.tar')
 model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
@@ -105,7 +106,6 @@ def extract_feature(dataloaders):
         #img, label = img.cuda(), label.cuda()
 
         output = model(img) # (B, D, H, W) --> B: batch size, HxWxD: feature volume size
-        output = output.view([1] + list(output.size()))
         # print(output.size())
 
         n, c, h, w = img.size()
@@ -149,7 +149,8 @@ for gallery in tqdm(gallery_feature):
 
 # ## Calculate Similarity using FAISS
 
-index = faiss.IndexIDMap(faiss.IndexFlatIP(H*W*D))
+# index = faiss.IndexIDMap(faiss.IndexFlatIP(H*W*D))
+index = faiss.IndexIDMap(faiss.IndexFlatL2(H*W*D))
 
 index.add_with_ids(np.array([t.numpy() for t in concatenated_gallery_vectors]),np.array(gallery_label))
 
