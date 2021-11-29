@@ -26,18 +26,16 @@ from metrics import rank1, rank5, calc_ap
 
 from baselines.LA_Transformer.model import LATransformerTest
 from baselines.AlignedReID.model import AlignedReIDModel
+from baselines.Centroids_reid.model import CentroidReID
+from baselines.Centroids_cam_reid.model import CentroidCamReID
+from baselines.TransReID.model import TransReID
+import logging
+logging.basicConfig(filename="experiments.log", filemode='a', format='%(levelname)s | %(message)s', level=logging.INFO)
 
-
-# ### Set feature volume sizes (height, width, depth) 
-# TODO: update with your model's feature length
 
 batch_size = 1
-H, W, D = 1, 1, 2048 # for dummymodel we have feature volume 7x7x2048
 
 # ### Load Model
-
-# TODO: Uncomment the following lines to load the Implemented and trained Model
-
 #save_path = "<model weight path>"
 #model = ReidModel(num_classes=C)
 #model.load_state_dict(torch.load(save_path), strict=False)
@@ -51,13 +49,41 @@ H, W, D = 1, 1, 2048 # for dummymodel we have feature volume 7x7x2048
 # save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
+# logging.info("LA Transformer")
 
-######## Aligned ReID
-H, W, D = 1, 1, 2048
-model = AlignedReIDModel()
-save_path = os.path.join('baselines/AlignedReID/la_tr_checkpoint_ep120.pth.tar')
+# ######## Aligned ReID
+# H, W, D = 1, 1, 2048
+# model = AlignedReIDModel()
+# save_path = os.path.join('baselines/AlignedReID/la_tr_checkpoint_ep120.pth.tar')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
+# logging.info("Aligned ReID")
+
+# ######## Centroid ReID
+# H, W, D = 1, 1, 2048
+# model = CentroidReID()
+# save_path = os.path.join('baselines/Centroids_reid/epoch=29.ckpt')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
+# logging.info("Centroid ReID")
+
+######## Centroid ReID with cam embeddings
+# H, W, D = 1, 1, 2048
+# model = CentroidCamReID()
+# save_path = os.path.join('baselines/Centroids_cam_reid/epoch=29.ckpt')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
+# logging.info("Centroid ReID with cam embeddings")
+
+######## TransReID with cam embeddings
+H, W, D = 1, 197, 768
+model = TransReID()
+save_path = os.path.join('baselines/TransReID/tranreid_120.pth')
 model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 model.eval()
+logging.info("TransReID")
+
+
 
 # ### Data Loader for query and gallery
 
@@ -175,7 +201,11 @@ for query, label in zip(concatenated_query_vectors, query_label):
     print("Correct: {}, Total: {}, Incorrect: {}".format(rank1_score, count, count-rank1_score), end="\r")
     ap += calc_ap(label, output)
 
-print("Rank1: %.3f, Rank5: %.3f, mAP: %.3f"%(rank1_score/len(query_feature), 
+str_to_print = "Rank1: %.3f, Rank5: %.3f, mAP: %.3f"%(rank1_score/len(query_feature), 
                                              rank5_score/len(query_feature), 
-                                             ap/len(query_feature)))    
+                                             ap/len(query_feature))
+print(str_to_print)
+logging.info(str_to_print)
+                                             
+                                                 
 
