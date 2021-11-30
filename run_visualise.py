@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 
+import cv2
 import os
 import faiss
 import numpy as np
@@ -34,67 +35,77 @@ logging.basicConfig(filename="experiments.log", filemode='a', format='%(levelnam
 
 batch_size = 1
 
+save_dir_root = "visualisation"
+os.makedirs(save_dir_root,  exist_ok=True)
 
-# ### Load Model
-#save_path = "<model weight path>"
-#model = ReidModel(num_classes=C)
-#model.load_state_dict(torch.load(save_path), strict=False)
-#model.eval()
 
 # TODO: Comment out the dummy model
-######## LA_Transfoermer
+######## LA_Transformer Baseline
+H, W, D = 1, 14, 768
+name = "LATransformer_baseline"
+vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
+model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+save_path = os.path.join('./weights/La_Transformer_baseline.pth')
+model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+model.eval()
+
+######## LA_Transformer Improved
 # H, W, D = 1, 14, 768
+# name = "LATransformer_improved"
 # vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
 # model = LATransformerTest(vit_base, lmbd=8).to("cpu")
-# # save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
-# # save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
-# # save_path = os.path.join('./baselines/LA_Transformer/ema_net_best_combined.pth')
-# save_path = os.path.join('./baselines/LA_Transformer/model_23.pth')
+# save_path = os.path.join('./weights/La_Transformer_Triplet_SelfEnsemble.pth')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
-# logging.info("LA Transformer with EMA and Triplet")
 
 # ######## Aligned ReID
-H, W, D = 1, 1, 2048
-model = AlignedReIDModel()
-save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
-# save_path = os.path.join('baselines/AlignedReID/cam_checkpoint_ep100.pth.tar')
+# H, W, D = 1, 1, 2048
+# name = "AlignedReID"
+# model = AlignedReIDModel()
+# save_path = os.path.join('./weights/AlignedReID_baseline.pth.tar')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
+# model.eval()
+
+# ######## Mask Guided Aligned ReID
+# H, W, D = 1, 1, 2048
+# name = "Mask_Guided_AlignedReID"
 # model = MaskAlignedReIDModel()
 # save_path = os.path.join('baselines/AlignedReID/masked_checkpoint_ep160.pth.tar')
-# model = AlignedReIDCam()
-# save_path = os.path.join('baselines/AlignedReID/cam_checkpoint_ep100.pth.tar')
-model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
-# model.load_state_dict(save_path, map_location=torch.device('cpu'))
-# print(model.keys())
-model.eval()
-# logging.info("Aligned ReID on soft masks total test only")
-logging.info("Aligned ReID with camera embeddings")
+# model.eval()
+
+# ######## Camera Aligned ReID
+# H, W, D = 1, 1, 2048
+# name = "Camera_AlignedReID"
+# model = AlignedReIDCam()
+# save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
+# model.eval()
 
 # ######## Centroid ReID
 # H, W, D = 1, 1, 2048
+# name = "CentroidReID"
 # model = CentroidReID()
 # save_path = os.path.join('baselines/Centroids_reid/epoch=29.ckpt')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
-# logging.info("Centroid ReID")
-# logging.info("Centroid ReID on soft masks total test only")
+
 
 ######## Centroid ReID with cam embeddings
 # H, W, D = 1, 1, 2048
+# name = "CentroidCamReID"
 # model = CentroidCamReID()
 # save_path = os.path.join('baselines/Centroids_cam_reid/epoch=29.ckpt')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
-# logging.info("Centroid ReID with cam embeddings")
 
-######## TransReID with cam embeddings
+######## TransReID 
 # H, W, D = 1, 197, 768
+# name = "TransReID"
 # model = TransReID()
 # save_path = os.path.join('baselines/TransReID/tranreid_120.pth')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
-# logging.info("TransReID")
 
 
 
@@ -118,10 +129,21 @@ data_transforms = {
         'gallery': transforms.Compose(transform_gallery_list),
     }
 
+transform_raw_query_list = [
+        transforms.ToTensor(),
+    ]
+transform_raw_gallery_list = [
+        transforms.ToTensor(),
+    ]
+
+data_transforms_raw = {
+        'query': transforms.Compose( transform_raw_query_list ),
+        'gallery': transforms.Compose(transform_raw_gallery_list),
+    }
+
 
 image_datasets = {}
 data_dir = "data/val"
-# data_dir = "masked_data/val"
 
 image_datasets['query'] = datasets.ImageFolder(os.path.join(data_dir, 'query'),
                                           data_transforms['query'])
@@ -129,19 +151,29 @@ image_datasets['gallery'] = datasets.ImageFolder(os.path.join(data_dir, 'gallery
                                           data_transforms['gallery'])
 query_loader = DataLoader(dataset = image_datasets['query'], batch_size=batch_size, shuffle=False )
 gallery_loader = DataLoader(dataset = image_datasets['gallery'], batch_size=batch_size, shuffle=False)
+image_datasets['query_raw'] = datasets.ImageFolder(os.path.join(data_dir, 'query'),
+                                          data_transforms_raw['query'])
+image_datasets['gallery_raw'] = datasets.ImageFolder(os.path.join(data_dir, 'gallery'),
+                                          data_transforms_raw['gallery'])
+query_raw_loader = DataLoader(dataset = image_datasets['query_raw'], batch_size=batch_size, shuffle=False )
+gallery_raw_loader = DataLoader(dataset = image_datasets['gallery_raw'], batch_size=batch_size, shuffle=False)
+
 
 class_names = image_datasets['query'].classes
 
 
 # ###  Extract Features
 
-def extract_feature(dataloaders):
+def extract_feature(dataloaders, raw_dataloader):
     
     features =  torch.FloatTensor()
+    images =  torch.FloatTensor()
+    # images =  []
     count = 0
     idx = 0
-    for data in tqdm(dataloaders):
+    for data, raw_data in tqdm(zip(dataloaders, raw_dataloader)):
         img, label = data
+        raw_img, _ = raw_data
         # Uncomment if using GPU for inference
         #img, label = img.cuda(), label.cuda()
 
@@ -152,16 +184,17 @@ def extract_feature(dataloaders):
         
         count += n
         features = torch.cat((features, output.detach().cpu()), 0)
+        images = torch.cat((images, raw_img.detach().cpu()), 0)
         idx += 1
-    return features
+    return features, images
 
 # Extract Query Features
 
-query_feature= extract_feature(query_loader)
+query_feature, query_imgs= extract_feature(query_loader, query_raw_loader)
 
 # Extract Gallery Features
 
-gallery_feature = extract_feature(gallery_loader)
+gallery_feature, gallery_imgs = extract_feature(gallery_loader, gallery_raw_loader)
 
 # Retrieve labels
 
@@ -191,24 +224,53 @@ for gallery in tqdm(gallery_feature):
 
 index = faiss.IndexIDMap(faiss.IndexFlatIP(H*W*D))
 # index = faiss.IndexIDMap(faiss.IndexFlatL2(H*W*D))
+ids = [i for i in range(len(gallery_imgs))]
+index.add_with_ids(np.array([t.numpy() for t in concatenated_gallery_vectors]),np.array(ids))
 
-index.add_with_ids(np.array([t.numpy() for t in concatenated_gallery_vectors]),np.array(gallery_label))
+label_index = faiss.IndexIDMap(faiss.IndexFlatIP(H*W*D))
+label_index.add_with_ids(np.array([t.numpy() for t in concatenated_gallery_vectors]), np.array(gallery_label))
 
-def search(query: str, k=1):
+def search_imgs(query: str, k=1):
     encoded_query = query.unsqueeze(dim=0).numpy()
     top_k = index.search(encoded_query, k)
     return top_k
 
+def search(query: str, k=1):
+    encoded_query = query.unsqueeze(dim=0).numpy()
+    top_k = label_index.search(encoded_query, k)
+    return top_k
+
 
 # ### Evaluate 
-
+save_dir = os.path.join(save_dir_root, name)
+os.makedirs(save_dir, exist_ok=True)
 rank1_score = 0
 rank5_score = 0
 ap = 0
 count = 0
-for query, label in zip(concatenated_query_vectors, query_label):
+for query, query_img, label in zip(concatenated_query_vectors, query_imgs, query_label):
     count += 1
     label = label
+    ids = search_imgs(query, k=10)
+    # print(ids[1][0])
+    ids = ids[1][0] - 1
+    images = gallery_imgs[ids]
+
+    query_save_dir = os.path.join(save_dir, str(count))
+    os.makedirs(query_save_dir, exist_ok=True)
+
+    query_img_to_save = np.uint8(np.array(255*query_img))
+    # print(query_img_to_save.shape)
+    query_img_to_save = np.transpose(query_img_to_save, (1, 2, 0))
+    query_img_to_save = cv2.cvtColor(query_img_to_save, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(os.path.join(query_save_dir, "query.png"), query_img_to_save)
+    for id, img in enumerate(images):
+        img_to_save = np.uint8(np.array(255*img))
+        img_to_save = np.transpose(img_to_save, (1, 2, 0))
+        img_to_save = cv2.cvtColor(img_to_save, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(os.path.join(query_save_dir, "top_{}.png".format(id+1)), img_to_save)
+    
+
     output = search(query, k=10)
     rank1_score += rank1(label, output) 
     rank5_score += rank5(label, output) 
@@ -223,3 +285,5 @@ logging.info(str_to_print)
                                              
                                                  
 
+
+    

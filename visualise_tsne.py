@@ -30,7 +30,7 @@ from baselines.LA_Transformer.model import LATransformerTest
 from baselines.AlignedReID.model import AlignedReIDModel, MaskAlignedReIDModel
 from baselines.Centroids_reid.model import CentroidReID
 from baselines.Centroids_cam_reid.model import CentroidCamReID
-from baselines.TransReID.model import TransReID
+# from baselines.TransReID.model import TransReID
 import logging
 logging.basicConfig(filename="experiments.log", filemode='a', format='%(levelname)s | %(message)s', level=logging.INFO)
 
@@ -49,31 +49,31 @@ batch_size = 1
 # vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
 # model = LATransformerTest(vit_base, lmbd=8).to("cpu")
 # # save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
-# # save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
-# save_path = os.path.join('./baselines/LA_Transformer/ema_net_best_combined.pth')
+# save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
+# # save_path = os.path.join('./baselines/LA_Transformer/model_30.pth')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
 # logging.info("LA Transformer with EMA Combined")
 
 # ######## Aligned ReID
-# H, W, D = 1, 1, 2048
-# model = AlignedReIDModel()
-# save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
-# # model = MaskAlignedReIDModel()
-# # save_path = os.path.join('baselines/AlignedReID/masked_checkpoint_ep160.pth.tar')
-# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
-# # model = torch.load(save_path, map_location=torch.device('cpu'))
-# # print(model.keys())
-# model.eval()
+H, W, D = 1, 1, 2048
+model = AlignedReIDModel()
+save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
+# model = MaskAlignedReIDModel()
+# save_path = os.path.join('baselines/AlignedReID/masked_checkpoint_ep160.pth.tar')
+model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
+# model = torch.load(save_path, map_location=torch.device('cpu'))
+# print(model.keys())
+model.eval()
 # # logging.info("Aligned ReID on soft masks total test only")
 # logging.info("Aligned ReID with mask guidance on masked data")
 
 # ######## Centroid ReID
-H, W, D = 1, 1, 2048
-model = CentroidReID()
-save_path = os.path.join('baselines/Centroids_reid/epoch=29.ckpt')
-model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-model.eval()
+# H, W, D = 1, 1, 2048
+# model = CentroidReID()
+# save_path = os.path.join('baselines/Centroids_reid/epoch=29.ckpt')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
 # logging.info("Centroid ReID")
 # logging.info("Centroid ReID on soft masks total test only")
 
@@ -186,10 +186,12 @@ def plot_tsne(dataloaders, save_path = "tsne.png", title = "tsne"):
 
     for i in range(red_vectors.shape[0]):
         x, y = red_vectors[i]
-        plt.scatter([x], [y], c=cmap(label_to_id[gallery_label[i]]), s=3)
+        plt.scatter([x], [y], c=cmap(label_to_id[gallery_label[i]]), s=5)
+    plt.title(title)
     plt.savefig(save_path, dpi=300)
     
 
 
-plot_tsne(gallery_loader, save_path = "./visualisation/CentroidsReID.png", title="TSNE plot for AlignedReID")
-
+plot_tsne(gallery_loader, save_path = "./visualisation/AlignedReID_baseline.png", title="TSNE plot for AlignedReID")
+# plot_tsne(gallery_loader, save_path = "./visualisation/LA_Transformer_improved.png", title="TSNE plot for LA Transformer")
+# 

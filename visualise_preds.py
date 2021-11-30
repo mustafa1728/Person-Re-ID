@@ -29,7 +29,7 @@ from baselines.LA_Transformer.model import LATransformerTest
 from baselines.AlignedReID.model import AlignedReIDModel, MaskAlignedReIDModel
 from baselines.Centroids_reid.model import CentroidReID
 from baselines.Centroids_cam_reid.model import CentroidCamReID
-from baselines.TransReID.model import TransReID
+# from baselines.TransReID.model import TransReID
 import logging
 logging.basicConfig(filename="experiments.log", filemode='a', format='%(levelname)s | %(message)s', level=logging.INFO)
 
@@ -39,22 +39,17 @@ save_dir_root = "visualisation"
 os.makedirs(save_dir_root,  exist_ok=True)
 
 
-# ### Load Model
-#save_path = "<model weight path>"
-#model = ReidModel(num_classes=C)
-#model.load_state_dict(torch.load(save_path), strict=False)
-#model.eval()
-
 # TODO: Comment out the dummy model
 ######## LA_Transfoermer
-# H, W, D = 1, 14, 768
-# name = "LATransformer_base"
-# vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
-# model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+H, W, D = 1, 14, 768
+name = "LATransformer_imp"
+vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
+model = LATransformerTest(vit_base, lmbd=8).to("cpu")
 # save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
-# # save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
-# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-# model.eval()
+save_path = os.path.join('./baselines/LA_Transformer/model_30.pth')
+# save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
+model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+model.eval()
 
 # ######## Aligned ReID
 # H, W, D = 1, 1, 2048
@@ -85,12 +80,12 @@ os.makedirs(save_dir_root,  exist_ok=True)
 # model.eval()
 
 ######## TransReID 
-H, W, D = 1, 197, 768
-name = "TransReID"
-model = TransReID()
-save_path = os.path.join('baselines/TransReID/tranreid_120.pth')
-model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-model.eval()
+# H, W, D = 1, 197, 768
+# name = "TransReID"
+# model = TransReID()
+# save_path = os.path.join('baselines/TransReID/tranreid_120.pth')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
 
 
 
@@ -249,4 +244,6 @@ for query, query_img, label in zip(concatenated_query_vectors, query_imgs, query
         img_to_save = np.transpose(img_to_save, (1, 2, 0))
         img_to_save = cv2.cvtColor(img_to_save, cv2.COLOR_RGB2BGR)
         cv2.imwrite(os.path.join(query_save_dir, "top_{}.png".format(id+1)), img_to_save)
+
+
     
