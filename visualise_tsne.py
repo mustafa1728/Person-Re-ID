@@ -1,7 +1,9 @@
+from __future__ import print_function
+
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 # Evaluation 
 # Acknowledgement: the code is based on Siddhant Kapil's repo on LA-Transformer
-
-from __future__ import print_function
 
 import os
 import faiss
@@ -43,36 +45,35 @@ batch_size = 1
 
 # TODO: Comment out the dummy model
 ######## LA_Transfoermer
-H, W, D = 1, 14, 768
-vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
-model = LATransformerTest(vit_base, lmbd=8).to("cpu")
-# save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
-# save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
-save_path = os.path.join('./baselines/LA_Transformer/ema_net_best_combined.pth')
-model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-model.eval()
-logging.info("LA Transformer with EMA Combined")
+# H, W, D = 1, 14, 768
+# vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
+# model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+# # save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
+# # save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
+# save_path = os.path.join('./baselines/LA_Transformer/ema_net_best_combined.pth')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
+# logging.info("LA Transformer with EMA Combined")
 
 # ######## Aligned ReID
 # H, W, D = 1, 1, 2048
 # model = AlignedReIDModel()
 # save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
-# # save_path = os.path.join('baselines/AlignedReID/cam_checkpoint_ep100.pth.tar')
 # # model = MaskAlignedReIDModel()
 # # save_path = os.path.join('baselines/AlignedReID/masked_checkpoint_ep160.pth.tar')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
-# # model.load_state_dict(save_path, map_location=torch.device('cpu'))
+# # model = torch.load(save_path, map_location=torch.device('cpu'))
 # # print(model.keys())
 # model.eval()
 # # logging.info("Aligned ReID on soft masks total test only")
-# logging.info("Aligned ReID with camera embeddings")
+# logging.info("Aligned ReID with mask guidance on masked data")
 
 # ######## Centroid ReID
-# H, W, D = 1, 1, 2048
-# model = CentroidReID()
-# save_path = os.path.join('baselines/Centroids_reid/epoch=29.ckpt')
-# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-# model.eval()
+H, W, D = 1, 1, 2048
+model = CentroidReID()
+save_path = os.path.join('baselines/Centroids_reid/epoch=29.ckpt')
+model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+model.eval()
 # logging.info("Centroid ReID")
 # logging.info("Centroid ReID on soft masks total test only")
 
@@ -131,11 +132,28 @@ class_names = image_datasets['query'].classes
 
 # ###  Extract Features
 
-def extract_feature(dataloaders):
+def get_cmap(n, name='hsv'):
+    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
+    RGB color; the keyword argument name must be a standard mpl colormap name.'''
+    return plt.cm.get_cmap(name, n)
+
+cmap = get_cmap(12)
+
+colors = [(int(np.random.choice(range(256))), int(np.random.choice(range(256))), int(np.random.choice(range(256)))) for i in range(12)]
+tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+
+gallery_path = image_datasets['gallery'].imgs
+gallery_cam,gallery_label = get_id(gallery_path)
+
+def plot_tsne(dataloaders, save_path = "tsne.png", title = "tsne"):
     
     features =  torch.FloatTensor()
+    vectors =  torch.FloatTensor()
     count = 0
     idx = 0
+    labels = []
+
+
     for data in tqdm(dataloaders):
         img, label = data
         # Uncomment if using GPU for inference
@@ -143,79 +161,35 @@ def extract_feature(dataloaders):
 
         output = model(img) # (B, D, H, W) --> B: batch size, HxWxD: feature volume size
         # print(output.size())
+        vector = output.view(1, -1)
+        labels.append(label.cpu().numpy())
+
+
 
         n, c, h, w = img.size()
         
         count += n
-        features = torch.cat((features, output.detach().cpu()), 0)
+        # features = torch.cat((features, output.detach().cpu()), 0)
+        vectors = torch.cat((vectors, vector.detach().cpu()), 0)
         idx += 1
-    return features
+        # if idx > 2:
+        #     break
 
-# Extract Query Features
+    # labels = np.asarray(labels).reshape(-1).tolist()
+    # print(labels)
+    set_labels = list(set(gallery_label))
+    label_to_id = {l:i for i, l in enumerate(set_labels)}
 
-query_feature= extract_feature(query_loader)
+    print(vectors.size())
+    red_vectors = tsne.fit_transform(vectors)
+    print(red_vectors.shape)
 
-# Extract Gallery Features
-
-gallery_feature = extract_feature(gallery_loader)
-
-# Retrieve labels
-
-gallery_path = image_datasets['gallery'].imgs
-query_path = image_datasets['query'].imgs
-
-gallery_cam,gallery_label = get_id(gallery_path)
-query_cam,query_label = get_id(query_path)
-
-
-# ## Concat Averaged GELTs
-
-concatenated_query_vectors = []
-for query in tqdm(query_feature):
-    fnorm = torch.norm(query, p=2, dim=1, keepdim=True)#*np.sqrt(H*W)
-    query_norm = query.div(fnorm.expand_as(query))
-    concatenated_query_vectors.append(query_norm.view((-1)))
-
-concatenated_gallery_vectors = []
-for gallery in tqdm(gallery_feature):
-    fnorm = torch.norm(gallery, p=2, dim=1, keepdim=True)#*np.sqrt(H*W)
-    gallery_norm = gallery.div(fnorm.expand_as(gallery))
-    concatenated_gallery_vectors.append(gallery_norm.view((-1)))
-  
-
-# ## Calculate Similarity using FAISS
-
-index = faiss.IndexIDMap(faiss.IndexFlatIP(H*W*D))
-# index = faiss.IndexIDMap(faiss.IndexFlatL2(H*W*D))
-
-index.add_with_ids(np.array([t.numpy() for t in concatenated_gallery_vectors]),np.array(gallery_label))
-
-def search(query: str, k=1):
-    encoded_query = query.unsqueeze(dim=0).numpy()
-    top_k = index.search(encoded_query, k)
-    return top_k
+    for i in range(red_vectors.shape[0]):
+        x, y = red_vectors[i]
+        plt.scatter([x], [y], c=cmap(label_to_id[gallery_label[i]]), s=3)
+    plt.savefig(save_path, dpi=300)
+    
 
 
-# ### Evaluate 
-
-rank1_score = 0
-rank5_score = 0
-ap = 0
-count = 0
-for query, label in zip(concatenated_query_vectors, query_label):
-    count += 1
-    label = label
-    output = search(query, k=10)
-    rank1_score += rank1(label, output) 
-    rank5_score += rank5(label, output) 
-    print("Correct: {}, Total: {}, Incorrect: {}".format(rank1_score, count, count-rank1_score), end="\r")
-    ap += calc_ap(label, output)
-
-str_to_print = "Rank1: %.3f, Rank5: %.3f, mAP: %.3f"%(rank1_score/len(query_feature), 
-                                             rank5_score/len(query_feature), 
-                                             ap/len(query_feature))
-print(str_to_print)
-logging.info(str_to_print)
-                                             
-                                                 
+plot_tsne(gallery_loader, save_path = "./visualisation/CentroidsReID.png", title="TSNE plot for AlignedReID")
 

@@ -47,22 +47,22 @@ os.makedirs(save_dir_root,  exist_ok=True)
 
 # TODO: Comment out the dummy model
 ######## LA_Transfoermer
-H, W, D = 1, 14, 768
-name = "LATransformer_base"
-vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
-model = LATransformerTest(vit_base, lmbd=8).to("cpu")
-save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
-# save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
-model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-model.eval()
+# H, W, D = 1, 14, 768
+# name = "LATransformer_base"
+# vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
+# model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+# save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
+# # save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
 
 # ######## Aligned ReID
 # H, W, D = 1, 1, 2048
 # name = "AlignedReID"
-# # model = AlignedReIDModel()
-# # save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
-# model = MaskAlignedReIDModel()
-# save_path = os.path.join('baselines/AlignedReID/masked_checkpoint_ep160.pth.tar')
+# model = AlignedReIDModel()
+# save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
+# # model = MaskAlignedReIDModel()
+# # save_path = os.path.join('baselines/AlignedReID/masked_checkpoint_ep160.pth.tar')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
 # # model = torch.load(save_path, map_location=torch.device('cpu'))
 # # print(model.keys())
@@ -85,12 +85,12 @@ model.eval()
 # model.eval()
 
 ######## TransReID 
-# H, W, D = 1, 197, 768
-# name = "TransReID"
-# model = TransReID()
-# save_path = os.path.join('baselines/TransReID/tranreid_120.pth')
-# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-# model.eval()
+H, W, D = 1, 197, 768
+name = "TransReID"
+model = TransReID()
+save_path = os.path.join('baselines/TransReID/tranreid_120.pth')
+model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+model.eval()
 
 
 
