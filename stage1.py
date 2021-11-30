@@ -22,7 +22,7 @@ def get_prediction(img_path, model, threshold):
     transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
     img = transform(img)
     pred = model([img])
-    masks = (pred[0]['masks']>0.1).squeeze().detach().cpu().numpy()
+    masks = (pred[0]['masks']).squeeze().detach().cpu().numpy()
     masks = masks
     return masks
 
@@ -40,7 +40,7 @@ def get_prediction_segm(img_path, model, threshold):
     normalized_masks = torch.nn.functional.softmax(pred, dim=1)
     person_mask = None
     for i in range(normalized_masks.size(1)):
-        if i != sem_class_to_idx['__background__']:
+        if i == sem_class_to_idx['person']:
             if person_mask is None:
                 person_mask = normalized_masks[0, i]
             else:
@@ -76,15 +76,16 @@ def main():
             if ".DS_Store" in file:
                 continue
             img_path = os.path.join(subdir, file)
-            save_path = img_path.replace("data", "masked_data_bin")
+            save_path = img_path.replace("data", "masks")
             os.makedirs(os.path.dirname(save_path), exist_ok=True)
             # masks = get_prediction(img_path, model, 0.5)
             # mask = masks[0]
             mask = get_prediction_segm(img_path, model, 0.5)
+            mask = np.uint(255*mask)
 
-            img = cv2.imread(img_path)
-            masked_img = img * np.expand_dims(mask, axis=-1)
-            cv2.imwrite(save_path, masked_img)
+            # img = cv2.imread(img_path)
+            # masked_img = img * np.expand_dims(mask, axis=-1)
+            cv2.imwrite(save_path, mask)
 
 
     

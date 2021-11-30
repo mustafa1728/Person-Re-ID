@@ -25,15 +25,15 @@ from utils import get_id
 from metrics import rank1, rank5, calc_ap
 
 from baselines.LA_Transformer.model import LATransformerTest
-from baselines.AlignedReID.model import AlignedReIDModel
+from baselines.AlignedReID.model import AlignedReIDModel, MaskAlignedReIDModel
 from baselines.Centroids_reid.model import CentroidReID
 from baselines.Centroids_cam_reid.model import CentroidCamReID
 from baselines.TransReID.model import TransReID
 import logging
 logging.basicConfig(filename="experiments.log", filemode='a', format='%(levelname)s | %(message)s', level=logging.INFO)
 
-
 batch_size = 1
+
 
 # ### Load Model
 #save_path = "<model weight path>"
@@ -43,21 +43,27 @@ batch_size = 1
 
 # TODO: Comment out the dummy model
 ######## LA_Transfoermer
-# H, W, D = 1, 14, 768
-# vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
-# model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+H, W, D = 1, 14, 768
+vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
+model = LATransformerTest(vit_base, lmbd=8).to("cpu")
 # save_path = os.path.join('./baselines/LA_Transformer/net_best.pth')
-# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-# model.eval()
-# logging.info("LA Transformer")
+save_path = os.path.join('./baselines/LA_Transformer/ema_triplet_net_best.pth')
+model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+model.eval()
+logging.info("LA Transformer  with Triplet Loss and EMA")
 
 # ######## Aligned ReID
 # H, W, D = 1, 1, 2048
-# model = AlignedReIDModel()
-# save_path = os.path.join('baselines/AlignedReID/la_tr_checkpoint_ep120.pth.tar')
-# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# # model = AlignedReIDModel()
+# # save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
+# model = MaskAlignedReIDModel()
+# save_path = os.path.join('baselines/AlignedReID/masked_checkpoint_ep160.pth.tar')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
+# # model = torch.load(save_path, map_location=torch.device('cpu'))
+# # print(model.keys())
 # model.eval()
-# logging.info("Aligned ReID")
+# # logging.info("Aligned ReID on soft masks total test only")
+# logging.info("Aligned ReID with mask guidance on masked data")
 
 # ######## Centroid ReID
 # H, W, D = 1, 1, 2048
@@ -66,6 +72,7 @@ batch_size = 1
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
 # logging.info("Centroid ReID")
+# logging.info("Centroid ReID on soft masks total test only")
 
 ######## Centroid ReID with cam embeddings
 # H, W, D = 1, 1, 2048
@@ -76,12 +83,12 @@ batch_size = 1
 # logging.info("Centroid ReID with cam embeddings")
 
 ######## TransReID with cam embeddings
-H, W, D = 1, 197, 768
-model = TransReID()
-save_path = os.path.join('baselines/TransReID/tranreid_120.pth')
-model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-model.eval()
-logging.info("TransReID")
+# H, W, D = 1, 197, 768
+# model = TransReID()
+# save_path = os.path.join('baselines/TransReID/tranreid_120.pth')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
+# logging.info("TransReID")
 
 
 
@@ -108,6 +115,7 @@ data_transforms = {
 
 image_datasets = {}
 data_dir = "data/val"
+# data_dir = "masked_data/val"
 
 image_datasets['query'] = datasets.ImageFolder(os.path.join(data_dir, 'query'),
                                           data_transforms['query'])
@@ -175,8 +183,8 @@ for gallery in tqdm(gallery_feature):
 
 # ## Calculate Similarity using FAISS
 
-# index = faiss.IndexIDMap(faiss.IndexFlatIP(H*W*D))
-index = faiss.IndexIDMap(faiss.IndexFlatL2(H*W*D))
+index = faiss.IndexIDMap(faiss.IndexFlatIP(H*W*D))
+# index = faiss.IndexIDMap(faiss.IndexFlatL2(H*W*D))
 
 index.add_with_ids(np.array([t.numpy() for t in concatenated_gallery_vectors]),np.array(gallery_label))
 
