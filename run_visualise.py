@@ -41,6 +41,7 @@ os.makedirs(save_dir_root,  exist_ok=True)
 
 # TODO: Comment out the dummy model
 ######## LA_Transformer Baseline
+<<<<<<< HEAD
 H, W, D = 1, 14, 768
 name = "LATransformer_baseline"
 vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
@@ -58,11 +59,34 @@ model.eval()
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
 # model.eval()
 
+=======
+# H, W, D = 1, 14, 768
+# name = "LATransformer_baseline"
+# vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
+# model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+# save_path = os.path.join('./weights/La_Transformer_baseline.pth')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
+
+######## LA_Transformer Improved
+H, W, D = 1, 14, 768
+name = "LATransformer_improved"
+vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
+model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+save_path = os.path.join('.')
+model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+model.eval()
+
+>>>>>>> 73075fd67461afc30f1c151cca7b5071b2c61256
 # ######## Aligned ReID
 # H, W, D = 1, 1, 2048
 # name = "AlignedReID"
 # model = AlignedReIDModel()
+<<<<<<< HEAD
 # save_path = os.path.join('./weights/AlignedReID_baseline.pth.tar')
+=======
+# save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
+>>>>>>> 73075fd67461afc30f1c151cca7b5071b2c61256
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
 # model.eval()
 
