@@ -41,25 +41,6 @@ os.makedirs(save_dir_root,  exist_ok=True)
 
 # TODO: Comment out the dummy model
 ######## LA_Transformer Baseline
-<<<<<<< HEAD
-H, W, D = 1, 14, 768
-name = "LATransformer_baseline"
-vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
-model = LATransformerTest(vit_base, lmbd=8).to("cpu")
-save_path = os.path.join('./weights/La_Transformer_baseline.pth')
-model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-model.eval()
-
-######## LA_Transformer Improved
-# H, W, D = 1, 14, 768
-# name = "LATransformer_improved"
-# vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
-# model = LATransformerTest(vit_base, lmbd=8).to("cpu")
-# save_path = os.path.join('./weights/La_Transformer_Triplet_SelfEnsemble.pth')
-# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
-# model.eval()
-
-=======
 # H, W, D = 1, 14, 768
 # name = "LATransformer_baseline"
 # vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
@@ -69,32 +50,37 @@ model.eval()
 # model.eval()
 
 ######## LA_Transformer Improved
-H, W, D = 1, 14, 768
-name = "LATransformer_improved"
-vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
-model = LATransformerTest(vit_base, lmbd=8).to("cpu")
-save_path = os.path.join('.')
-model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# H, W, D = 1, 14, 768
+# name = "LATransformer_improved"
+# vit_base = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=751)
+# model = LATransformerTest(vit_base, lmbd=8).to("cpu")
+# save_path = os.path.join('./weights/La_Transformer_Triplet_Self_Ensemble.pth')
+# model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')), strict=False)
+# model.eval()
+
+# ######## Aligned ReID
+H, W, D = 1, 1, 2048
+name = "AlignedReID"
+model = AlignedReIDModel()
+save_path = os.path.join('./weights/AlignedReID_baseline.pth.tar')
+model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
 model.eval()
 
->>>>>>> 73075fd67461afc30f1c151cca7b5071b2c61256
-# ######## Aligned ReID
+
+# ######## Aligned ReID Improved
 # H, W, D = 1, 1, 2048
-# name = "AlignedReID"
+# name = "AlignedReID_improved"
 # model = AlignedReIDModel()
-<<<<<<< HEAD
-# save_path = os.path.join('./weights/AlignedReID_baseline.pth.tar')
-=======
-# save_path = os.path.join('baselines/AlignedReID/checkpoint_ep120.pth.tar')
->>>>>>> 73075fd67461afc30f1c151cca7b5071b2c61256
+# save_path = os.path.join('./weights/AlignedReID_Feature_Invariance.pth.tar')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
 # model.eval()
+
 
 # ######## Mask Guided Aligned ReID
 # H, W, D = 1, 1, 2048
 # name = "Mask_Guided_AlignedReID"
 # model = MaskAlignedReIDModel()
-# save_path = os.path.join('baselines/AlignedReID/masked_checkpoint_ep160.pth.tar')
+# save_path = os.path.join('./weights/AlignedReID_baseline.pth.tar')
 # model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu'))['state_dict'], strict=False)
 # model.eval()
 
@@ -277,7 +263,7 @@ for query, query_img, label in zip(concatenated_query_vectors, query_imgs, query
     label = label
     ids = search_imgs(query, k=10)
     # print(ids[1][0])
-    ids = ids[1][0] - 1
+    ids = ids[1][0] 
     images = gallery_imgs[ids]
 
     query_save_dir = os.path.join(save_dir, str(count))
@@ -304,10 +290,8 @@ for query, query_img, label in zip(concatenated_query_vectors, query_imgs, query
 str_to_print = "Rank1: %.3f, Rank5: %.3f, mAP: %.3f"%(rank1_score/len(query_feature), 
                                              rank5_score/len(query_feature), 
                                              ap/len(query_feature))
+print("")
+print(name)
 print(str_to_print)
+logging.info(name)
 logging.info(str_to_print)
-                                             
-                                                 
-
-
-    
