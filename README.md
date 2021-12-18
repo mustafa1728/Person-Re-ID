@@ -5,7 +5,7 @@ Experiments on some existing Re-ID methods on a different dataset with qualitati
 
 ### Description
 
-A detailed description of the problem statement and scope of the work can be found [here](./assets/COL780_Project.pdf).
+A detailed description of the problem statement and scope of the work can be found [here](./assets/report.pdf).
 
 ### Baselines
 
