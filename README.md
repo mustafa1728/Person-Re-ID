@@ -1,7 +1,10 @@
 # Person Re Identification
 
+[Mustafa Chasmai](https://github.com/mustafa1728) | [Tamajit Banerjee](https://github.com/tamajit-banerjee)
 
-Experiments on some existing Re-ID methods on a different dataset with qualitative and quantitaive analysescof their performance and proposals of methods to improve the results further.
+Experiments on some existing Re-ID methods on a different dataset with qualitative and quantitative analyses of their performance along with proposals to improve the results further.
+
+Part of course project of COL780 2021 taken by Prof. Chetan Arora. 
 
 ### Description
 
