@@ -8,7 +8,7 @@ Part of course project of COL780 2021 taken by Prof. Chetan Arora.
 
 ### Description
 
-A detailed description of the problem statement and scope of the work can be found [here](./assets/report.pdf).
+A detailed description of the approach used can be found in the report [here](./assets/report.pdf).
 
 ### Baselines
 
